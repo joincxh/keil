@@ -1,0 +1,590 @@
+C51 COMPILER V9.00   080CXH                                                                06/18/2021 12:21:47 PAGE 1   
+
+
+C51 COMPILER V9.00, COMPILATION OF MODULE 080CXH
+OBJECT MODULE PLACED IN 080cxh.OBJ
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE 080cxh.c BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1                  //ÃÜÂëËøµ¥Æ¬»ú¿Î³ÌÉè¼Æ   5122512020080³ÂÐË»ª 2021/6/1
+   2                  #include<reg52.h>
+   3                  #include <intrins.h>
+   4                  #define uchar unsigned char      //ºê¶¨ÒåÀàÐÍ
+   5                  uchar initpassword1=0,initpassword2=0,initpassword3=0,initpassword4=0,initpassword5=0,initpassword6=0; //
+             -ÓÉÓÚµôµç¼ÇÒä  ÃÜÂëÓÉ×îºóÒ»´ÎµÄÃÜÂë¾ö¶¨  ³õÊ¼0
+   6                  uchar newpassword1=0,newpassword2=0,newpassword3=0,newpassword4=0,newpassword5=0,newpassword6=0;  //ÐÂÃÜÂ
+             -ëÊäÈë ¿ÉÒÔ¾­¹ý¶Ïµç´æ´¢                ³õÊ¼0
+   7                  uchar position,key,key_temp,number;  //¶¨ÒåÅÐ¶ÏÎ»ÖÃ¡¢ÖµÑ¡Ôñ¡¢ÔÝ´æÖµ¡¢ÊäÈë´ÎÊý
+   8                  unsigned int v[]={16,16,16,16,16,16};   //ËÍÈëÊýÂë¹ÜÃðµÆ²»ÏÔÊ¾±êÊ¶³õÊ¼×´Ì¬
+   9                  unsigned char code wei[]={0xfe,0xfd,0xfb,0xf7,0xef,0xdf};  //Î»Ñ¡
+  10                  //uchar value=0;
+  11                  //I2C×ÜÏß´«ËÍ
+  12                  sbit sda=P2^0;   //Êý¾ÝÏß         
+  13                  sbit scl=P2^1;   //Ê±ÖÓÏß
+  14                  bit open,change,ok,end,reset,close,root,admin;   //¿ªËø¡¢¸ü¸ÄÃÜÂë¡¢È·¶¨¡¢Íê±Ï¡¢ÖØÉè¡¢¹Ø±Õ¡¢³õÊ¼»¯ÃÜÂëÎª0¡¢
+             -ÖØÖÃÃÜÂë£¨Éí·ÝÖ¤ºóÁùÎ»Ò²ÐÐ£©
+  15                  sbit dula=P2^6;  //¶ÎÑ¡
+  16                  sbit wela=P2^7;            //Î»Ñ¡
+  17                  sbit beep=P2^3;                          //·äÃùÆ÷
+  18                  unsigned char code datatable[]={0x3f,   //"0"  0
+  19                  0x06,//"1"        1
+  20                  0x5b,    //"2"          2
+  21                  0x4f,            //"3"          3
+  22                  0x66,                    //"4"    4
+  23                  0x6d,                            //"5"   5
+  24                  0x7d,                                    //"6"    6
+  25                  0x07,                                            //"7"           7
+  26                  0x7f,                                                    //"8"          8
+  27                  0x6f,                                                            //"9"    9
+  28                  0x77,                                                           //"A"            10
+  29                  0x7c,                                                                   //"B"      11
+  30                  0x39,                                                                           //"C"     12
+  31                  0x5e,                                                                                   //"D"     13
+  32                  0x79,                                                                                           //"E"     14
+  33                  0x71,                                                                                                   //"F"      15
+  34                  0x00,                                                                                                           //"Ï¨Ãð¡¢ÃðµÆ"   16
+  35                  0x40                                                                                                              //"-"ÀàËÆ¼ÓÃÜ²Ù×÷        17
+  36                  };        //ÊýÂë¹ÜµÄ¸÷¸öÖµ
+  37                  //µôµç¼ÇÒäÊ¹ÓÃEEPROM´æ´¢ ¿ÉÊµÏÖµôµç¼ÇÒä I2C×ÜÏß´«ËÍ·½Ê½
+  38                  void delay(unsigned char i)     //ÑÓÊ±º¯Êý
+  39                  {
+  40   1                      uchar j,k;
+  41   1                for(j=i;j>0;j--)
+  42   1                  for(k=125;k>0;k--);
+  43   1              }
+  44                  void nop()      //Î¢ÃëÑÓÊ±
+  45                  {
+  46   1                      _nop_();
+  47   1                      _nop_();
+  48   1              }
+  49                  
+  50                  void delay1(unsigned int m)     // 24c02Çý¶¯¶ÁÐ´µÄÑÓÊ±
+  51                  {       unsigned int n;
+  52   1                      for(n=0;n<m;n++);
+C51 COMPILER V9.00   080CXH                                                                06/18/2021 12:21:47 PAGE 2   
+
+  53   1              }
+  54                  void init()  //24c02³õÊ¼»¯×Ó³ÌÐò
+  55                  {
+  56   1                      scl=1;
+  57   1                      nop();
+  58   1                      sda=1;
+  59   1                      nop();
+  60   1              }
+  61                  void start()        //Æô¶¯I2C×ÜÏß
+  62                  {
+  63   1                      sda=1;
+  64   1                      nop();
+  65   1                      scl=1;
+  66   1                      nop();
+  67   1                      sda=0;
+  68   1                      nop();
+  69   1                      scl=0;
+  70   1                      nop();
+  71   1              }
+  72                  void stop()         //Í£Ö¹I2C×ÜÏß
+  73                  {
+  74   1                      sda=0;
+  75   1                      nop();
+  76   1                      scl=1;
+  77   1                      nop();
+  78   1                      sda=1;
+  79   1                      nop();
+  80   1              }
+  81                  void writebyte(unsigned char j)  //Ð´ÈëÒ»¸ö×Ö½Ú
+  82                  {
+  83   1                      unsigned char i,temp;
+  84   1                      temp=j;
+  85   1                      for (i=0;i<8;i++)
+  86   1                 {
+  87   2                         scl=0;
+  88   2                              _nop_();
+  89   2                              if((temp&0x80)==0x80)
+  90   2                                      sda=1;    //ÖÃÒ»
+  91   2                              else
+  92   2                                      sda=0;    //ÖÃÁã
+  93   2                              scl=1;
+  94   2                              _nop_();
+  95   2                              temp<<=1;
+  96   2                 }
+  97   1                 scl=0;
+  98   1                 nop();
+  99   1                 sda=1;
+ 100   1                 nop();
+ 101   1              }
+ 102                  unsigned char readbyte()  //¶ÁÒ»¸ö×Ö½Ú
+ 103                  {
+ 104   1                 unsigned char i,k=0;
+ 105   1                 scl=0; nop(); sda=1;
+ 106   1                 for (i=0;i<8;i++)
+ 107   1                 {  
+ 108   2                      scl=1;
+ 109   2                              _nop_();
+ 110   2                              if(sda)
+ 111   2                                      k|=0x01;
+ 112   2                              if(i<7)
+ 113   2                                      k<<=1;
+ 114   2                              scl=0;
+C51 COMPILER V9.00   080CXH                                                                06/18/2021 12:21:47 PAGE 3   
+
+ 115   2                              _nop_();        
+ 116   2              
+ 117   2                      }
+ 118   1                      nop();
+ 119   1                      return(k);
+ 120   1              }
+ 121                  
+ 122                  void clock()   //I2C×ÜÏßÊ±ÖÓ
+ 123                  {
+ 124   1                 unsigned char i=0;
+ 125   1                 scl=1;
+ 126   1                 nop();
+ 127   1                 while((sda==1)&&(i<255))
+ 128   1                        i++;
+ 129   1                 scl=0;
+ 130   1                 nop();
+ 131   1              }
+ 132                  //Ö¸¶¨µØÖ·¶ÁÈ¡Ò»¸ö×Ö½Ú//
+ 133                  unsigned char at24c02read(unsigned char address)
+ 134                  {
+ 135   1                 unsigned char i;
+ 136   1                 start();
+ 137   1                 writebyte(0xa0);               //Ö¸¶¨µØÖ·¶Á²Ù×÷
+ 138   1                 clock();
+ 139   1                 writebyte(address);
+ 140   1                 clock();
+ 141   1                 start();
+ 142   1                 writebyte(0xa1);
+ 143   1                 clock();
+ 144   1                 i=readbyte();
+ 145   1                 stop();
+ 146   1                 delay1(100);
+ 147   1                 return(i);
+ 148   1              }
+ 149                  //Ð´ÈëÒ»×Ö½Ú//
+ 150                  void at24c02write(unsigned char address,unsigned char info)
+ 151                  {
+ 152   1                 start();
+ 153   1                 writebyte(0xa0);      //Ö¸¶¨µØÖ·Ð´Èë
+ 154   1                 clock();
+ 155   1                 writebyte(address);
+ 156   1                 clock();
+ 157   1                 writebyte(info);
+ 158   1                 clock();
+ 159   1                 stop();
+ 160   1                 delay1(5000); 
+ 161   1              }
+ 162                  void display()  //ÏÔÊ¾º¯
+ 163                  {
+ 164   1              unsigned char i;
+ 165   1              for(i=0;i<6;i++){
+ 166   2                      dula=0;
+ 167   2                 P0=datatable[v[i]];
+ 168   2                 dula=1;
+ 169   2                 dula=0;                
+ 170   2                 wela=0;
+ 171   2                 P0=wei[i];
+ 172   2                 wela=1;
+ 173   2                 wela=0;
+ 174   2                 delay(5);
+ 175   2                      }
+ 176   1              }
+C51 COMPILER V9.00   080CXH                                                                06/18/2021 12:21:47 PAGE 4   
+
+ 177                  void keyscan()
+ 178                  {
+ 179   1                      if(P3!=0xf0){//ÓÐ°´¼ü°´ÏÂ       
+ 180   2                  P3=0xfe;
+ 181   2                  key_temp=P3;
+ 182   2                  key_temp=key_temp&0xf0;
+ 183   2                  if(key_temp!=0xf0)
+ 184   2                  {
+ 185   3                    delay(10);
+ 186   3                    if(key_temp!=0xf0)
+ 187   3                    { 
+ 188   4                      key_temp=~P3;  //È¡·´
+ 189   4                      switch(key_temp)
+ 190   4                      {
+ 191   5                        case 0x11:   //s6
+ 192   5                             key=0;
+ 193   5                                         position++;
+ 194   5                             break;
+ 195   5              
+ 196   5                        case 0x21:     //s7
+ 197   5                             key=1;
+ 198   5                                         position++;
+ 199   5                             break;
+ 200   5              
+ 201   5                        case 0x41:     //s8
+ 202   5                             key=2;
+ 203   5                                         position++;
+ 204   5                             break;
+ 205   5              
+ 206   5                        case 0x81:   //s9
+ 207   5                             key=3;
+ 208   5                                         position++;
+ 209   5                             break;
+ 210   5                       }
+ 211   4                       while(key_temp!=0xf0) 
+ 212   4                      {
+ 213   5                         key_temp=P3;
+ 214   5                         key_temp=key_temp&0xf0;
+ 215   5                         beep=0;
+ 216   5                       }
+ 217   4                       beep=1;
+ 218   4                    }
+ 219   3                  }
+ 220   2                  P3=0xfd;
+ 221   2                  key_temp=P3;
+ 222   2                  key_temp=key_temp&0xf0;
+ 223   2                  if(key_temp!=0xf0)
+ 224   2                  {
+ 225   3                    delay(10);
+ 226   3                    if(key_temp!=0xf0)
+ 227   3                    {
+ 228   4                      key_temp=~P3;
+ 229   4                      switch(key_temp)
+ 230   4                      {
+ 231   5                        case 0x12:    //s10
+ 232   5                             key=4;
+ 233   5                                         position++;
+ 234   5                             break;
+ 235   5              
+ 236   5                        case 0x22:    //s11
+ 237   5                             key=5;
+ 238   5                                         position++;
+C51 COMPILER V9.00   080CXH                                                                06/18/2021 12:21:47 PAGE 5   
+
+ 239   5                             break;
+ 240   5              
+ 241   5                        case 0x42:    //s12
+ 242   5                             key=6;
+ 243   5                                         position++;
+ 244   5                             break;
+ 245   5              
+ 246   5                        case 0x82:    //s13
+ 247   5                             key=7;
+ 248   5                                         position++;
+ 249   5                             break;
+ 250   5                       }
+ 251   4                       while(key_temp!=0xf0)
+ 252   4                       {
+ 253   5                         key_temp=P3;
+ 254   5                         key_temp=key_temp&0xf0;
+ 255   5                         beep=0;
+ 256   5                       }
+ 257   4                       beep=1;
+ 258   4                    }
+ 259   3                    }
+ 260   2                  P3=0xfb;
+ 261   2                  key_temp=P3;
+ 262   2                  key_temp=key_temp&0xf0;
+ 263   2                  if(key_temp!=0xf0)
+ 264   2                  {
+ 265   3                    delay(10);
+ 266   3                    if(key_temp!=0xf0)
+ 267   3                    {
+ 268   4                      key_temp=~P3;
+ 269   4                      switch(key_temp)
+ 270   4                      {
+ 271   5                        case 0x14:   //s14
+ 272   5                             key=8;
+ 273   5                                         position++;
+ 274   5                             break;
+ 275   5              
+ 276   5                        case 0x24:   //s15
+ 277   5                             key=9;
+ 278   5                                         position++;
+ 279   5                             break;
+ 280   5                                         
+ 281   5                        case 0x44:    //s16  ¸ü¸ÄÃÜÂë
+ 282   5                             change=1;
+ 283   5                                         position=0;
+ 284   5                             break;
+ 285   5              
+ 286   5                        case 0x84:    //s17 È·ÈÏÃÜÂë ¿ªËøºó²ÅÄÜÊ¹ÓÃ
+ 287   5                                         if(open)
+ 288   5                             ok=1;
+ 289   5                             break;
+ 290   5                       }
+ 291   4                      while(key_temp!=0xf0)
+ 292   4                       {
+ 293   5                         key_temp=P3;
+ 294   5                         key_temp=key_temp&0xf0;
+ 295   5                         beep=0;
+ 296   5                       }
+ 297   4                       beep=1;
+ 298   4                    }
+ 299   3                    }
+ 300   2                        P3=0xf7;
+C51 COMPILER V9.00   080CXH                                                                06/18/2021 12:21:47 PAGE 6   
+
+ 301   2                  key_temp=P3;
+ 302   2                  key_temp=key_temp&0xf0;
+ 303   2                  if(key_temp!=0xf0)
+ 304   2                  {
+ 305   3                    delay(10);
+ 306   3                    if(key_temp!=0xf0)
+ 307   3                    {
+ 308   4                      key_temp=~P3;
+ 309   4                      switch(key_temp)
+ 310   4                      {
+ 311   5                        case 0x18:   //s18 ÖØÉèÃÜÂë
+ 312   5                                         reset=1;
+ 313   5                             break;
+ 314   5              
+ 315   5                        case 0x28://s19 ¹Ø±ÕÃÜÂëËø
+ 316   5                                         close=1;
+ 317   5                             break;
+ 318   5                                case 0x48:
+ 319   5                                              if(open)
+ 320   5                                              root=1; //S20³õÊ¼»¯ÃÜÂë  µôµç´æ´¢Íü¼ÇÖ®ºó ¿ÉÒÔÊ¹ÓÃ ¿ªËøºó²ÅÄÜÊ¹ÓÃ
+ 321   5                                              break;
+ 322   5                                case 0x88:
+ 323   5                                              admin=1;//S21½â¾öÊäÈëÃÜÂëÈý´Î´íÎó  ³õÊ¼»¯ÃÜÂëÎªÉí·ÝÖ¤ºóÁùÎ»£¨ÕâÀïÊ¹ÓÃ111222£©
+ 324   5                                              break;
+ 325   5                       }
+ 326   4                      while(key_temp!=0xf0)
+ 327   4                       {
+ 328   5                         key_temp=P3;
+ 329   5                         key_temp=key_temp&0xf0;
+ 330   5                         beep=0;
+ 331   5                       }
+ 332   4                       beep=1;
+ 333   4                      }
+ 334   3                    }
+ 335   2                      }
+ 336   1              }
+ 337                  void inputpw()//ÊäÈëÊý¾Ý·ÖÅä
+ 338                  {
+ 339   1                      if(!end)
+ 340   1               {
+ 341   2                      switch(position)         
+ 342   2                      {                               //¸øÐÂÃÜÂë¸³Öµ  ¶ÔÓÚÃÜÂëµÄÏÔÊ¾  ½øÐÐÅÐ¶Ï ÓÃÆäËû·ûºÅ´úÌæ
+ 343   3                              case 1:newpassword1=key; 
+ 344   3                              if(!open){
+ 345   4                                         v[position-1]=17;
+ 346   4                              } else{
+ 347   4                                       v[position-1]=key;
+ 348   4                              }       break;
+ 349   3                              case 2:newpassword2=key;if(v[position-2]==17){
+ 350   4                                         v[position-1]=17;
+ 351   4                              } else{
+ 352   4                                       v[position-1]=key;
+ 353   4                              }       break;
+ 354   3                              case 3:newpassword3=key;if(v[position-3]==17){
+ 355   4                                         v[position-1]=17;
+ 356   4                              } else{
+ 357   4                                       v[position-1]=key;
+ 358   4                              }       break;
+ 359   3                              case 4:newpassword4=key;if(v[position-4]==17){
+ 360   4                                         v[position-1]=17;
+ 361   4                              } else{
+ 362   4                                       v[position-1]=key;
+C51 COMPILER V9.00   080CXH                                                                06/18/2021 12:21:47 PAGE 7   
+
+ 363   4                              }       break;
+ 364   3                              case 5:newpassword5=key; if(v[position-5]==17){
+ 365   4                                         v[position-1]=17;
+ 366   4                              } else{
+ 367   4                                       v[position-1]=key;
+ 368   4                              }       break;
+ 369   3                              case 6:newpassword6=key; 
+ 370   3                              if(v[position-6]==17){
+ 371   4                                         v[position-1]=17;end=1;number++;//ÊäÈë´ÎÊýÀÛ¼Ó
+ 372   4                              } else{
+ 373   4                                       v[position-1]=key;end=1;
+ 374   4                              } break;        //½áÊø±êÖ¾
+ 375   3                      }
+ 376   2               }
+ 377   1              }
+ 378                  void check()      //ÑéÖ¤ÃÜÂëÊÇ·ñÕýÈ·
+ 379                  {
+ 380   1                      if(end)  //Ö»ÓÐµ±ÁùÎ»ÃÜÂë¾ùÊäÈëÍê±Ïºó·½½øÐÐÑéÖ¤
+ 381   1                      {
+ 382   2                      if((newpassword1==initpassword1)&&(newpassword2==initpassword2)&&(newpassword3==initpassword3)&&(newpass
+             -word4==initpassword4)&&(newpassword5==initpassword5)&&(newpassword6==initpassword6)){
+ 383   3                      open=1;number=0;
+ 384   3                                      //µ±ÊäÈëµÄÃÜÂëÕýÈ·£¬ÖÃÒ»} 
+ 385   3                      } 
+ 386   2                      }
+ 387   1              }
+ 388                  void adminmanage(){     //¹ÜÀíÔ±ÖØÖÃÃÜÂëº¯Êý //°´ÏÂS21ÁªÏµ¹ÜÀíÔ±¸ü¸ÄÃÜÂëÎªÉí·ÝÖ¤ºóÁùÎ»  111222
+ 389   1                                      at24c02write(0,1);
+ 390   1                                              at24c02write(1,1);
+ 391   1                                              at24c02write(2,1);
+ 392   1                                              at24c02write(3,2);
+ 393   1                                              at24c02write(4,2);
+ 394   1                                              at24c02write(5,2);      //Ã¿¸öµ¥Ôª´æ´¢
+ 395   1                                              initpassword1=at24c02read(0);   
+ 396   1                                  initpassword2=at24c02read(1);
+ 397   1                                              initpassword3=at24c02read(2);
+ 398   1                                              initpassword4=at24c02read(3);
+ 399   1                                              initpassword5=at24c02read(4);
+ 400   1                                              initpassword6=at24c02read(5);
+ 401   1                                              root=0;
+ 402   1                                              P1=0xff;   //ÃðµÆ
+ 403   1                                              delay(1000);
+ 404   1                                              P1=0x0f;   //ÌáÊ¾ ×ó±ßËÄ¸öµÆÁÁÌáÊ¾
+ 405   1                                              delay(1000);
+ 406   1                                              delay(1000);
+ 407   1                                              delay(1000);
+ 408   1                                              delay(1000);
+ 409   1                                              delay(1000);
+ 410   1                                      //      P1=0xff;   //ÃðµÆ
+ 411   1                                              close=1;
+ 412   1                                              number=0;//ÊäÈë´íÎó´ÎÊýÖÃÁã
+ 413   1                                              admin=0;
+ 414   1              }
+ 415                  void reatartinpw(){     //³õÊ¼»¯ÃÜÂëº¯Êý        //S20³õÊ¼»¯ÃÜÂë
+ 416   1                                      at24c02write(0,0);
+ 417   1                                              at24c02write(1,0);
+ 418   1                                              at24c02write(2,0);
+ 419   1                                              at24c02write(3,0);
+ 420   1                                              at24c02write(4,0);
+ 421   1                                              at24c02write(5,0);      //Ã¿¸öµ¥Ôª´æ´¢
+ 422   1                                              initpassword1=at24c02read(0);   
+ 423   1                                  initpassword2=at24c02read(1);
+C51 COMPILER V9.00   080CXH                                                                06/18/2021 12:21:47 PAGE 8   
+
+ 424   1                                              initpassword3=at24c02read(2);
+ 425   1                                              initpassword4=at24c02read(3);
+ 426   1                                              initpassword5=at24c02read(4);
+ 427   1                                              initpassword6=at24c02read(5);
+ 428   1                                              root=0;
+ 429   1                                              P1=0xff;   //ÃðµÆ
+ 430   1                                              delay(1000);
+ 431   1                                              P1=0xef;   //ºìµÆÌáÊ¾
+ 432   1                                              delay(1000);
+ 433   1                                              delay(1000);
+ 434   1                                              delay(1000);
+ 435   1                                              delay(1000);
+ 436   1                                              delay(1000);
+ 437   1                                      //      P1=0xff;   //ÃðµÆ
+ 438   1                                              close=1;
+ 439   1              }
+ 440                  void pwset(){//ÃÜÂëÈ·ÈÏ ±£´æÐÂÃÜÂëº¯Êý£¨±£´æÃÜÂë£©
+ 441   1              unsigned char flag;
+ 442   1                              ok=0;
+ 443   1                                      position=0;
+ 444   1                                      change=0;
+ 445   1                                      at24c02write(0,newpassword1);
+ 446   1                                      at24c02write(1,newpassword2);
+ 447   1                                      at24c02write(2,newpassword3);
+ 448   1                                      at24c02write(3,newpassword4);
+ 449   1                                      at24c02write(4,newpassword5);
+ 450   1                                      at24c02write(5,newpassword6);//Ã¿¸öµ¥Ôª´æ´¢
+ 451   1                                      initpassword1=newpassword1;
+ 452   1                                      initpassword2=newpassword2;
+ 453   1                                      initpassword3=newpassword3; 
+ 454   1                                      initpassword4=newpassword4;
+ 455   1                                      initpassword5=newpassword5;
+ 456   1                                      initpassword6=newpassword6;     //ÐÂÃÜÂëÌæ»»³É¹¦
+ 457   1                                      for(flag=0;flag<6;flag++){
+ 458   2                                               v[flag]=16;
+ 459   2                                      }        //ÖØÐÂÏ¢ÆÁ
+ 460   1              }
+ 461                  void resetfun(){//ÖØÐÂÊäÈëº¯Êý   //µ±S18±»°´ÏÂ£¬resetÖÃÎ»
+ 462   1              unsigned char flag;
+ 463   1                        reset=0; position=0;end=0; 
+ 464   1                              for(flag=0;flag<6;flag++){
+ 465   2                                               v[flag]=16;
+ 466   2                                      }           //ÖØÐÂÏ¢ÆÁ
+ 467   1              
+ 468   1              }
+ 469                  void closed(){ //¹ØËøº¯Êý //S19¼ü°´ÏÂ£¬closeÖÃÎ»
+ 470   1              unsigned char flag;
+ 471   1                                      close=0;change=0;//±äÁ¿ÇåÁã£¬³õÊ¼»¯¡£
+ 472   1                                      position=0;     end=0;
+ 473   1                                      open=0;
+ 474   1                                      P1=0xff;   //¹ØµÆ
+ 475   1                                      for(flag=0;flag<6;flag++){
+ 476   2                                               v[flag]=16;
+ 477   2                                      }//ÖØÐÂÏ¢ÆÁ
+ 478   1              
+ 479   1              }
+ 480                  void main()
+ 481                  {  unsigned char flag;
+ 482   1                      init();//³õÊ¼»¯ 
+ 483   1                      initpassword1=at24c02read(0);   
+ 484   1                      initpassword2=at24c02read(1);
+ 485   1                      initpassword3=at24c02read(2);
+C51 COMPILER V9.00   080CXH                                                                06/18/2021 12:21:47 PAGE 9   
+
+ 486   1                      initpassword4=at24c02read(3);
+ 487   1                      initpassword5=at24c02read(4);
+ 488   1                      initpassword6=at24c02read(5);
+ 489   1                      //¶Ïµç¼ÇÒä
+ 490   1                      while(1)
+ 491   1                      {
+ 492   2                              keyscan();//ÊäÈëÐÐÁÐÉ¨Ãè
+ 493   2                              inputpw();//ÊäÈëÊý¾ÝÑ¡Ôñ²É¼¯
+ 494   2                              check();//¿ªËøÑéÖ¤
+ 495   2                              if(open)//openÎª1£¬Ôò¿ªËø
+ 496   2                              {
+ 497   3                                      P1=0x00;
+ 498   3                                      if(!change)
+ 499   3                                              end=0;
+ 500   3                              }
+ 501   2                      if(number>=3){//Èý´ÎÊäÈëÃÜÂë´íÎó
+ 502   3                               for(flag=0;flag<6;flag++){
+ 503   4                                               v[flag]=0x76;
+ 504   4                                      }
+ 505   3                               display();
+ 506   3                      }
+ 507   2                        while(admin){//°´ÏÂS21ÁªÏµ¹ÜÀíÔ±¸ü¸ÄÃÜÂëÎªÉí·ÝÖ¤ºóÁùÎ»  111222
+ 508   3                                      adminmanage();//µ÷ÓÃÖØÖÃÃÜÂëº¯Êý
+ 509   3                                }
+ 510   2                              if(change)//µ±S16°´ÏÂ£¬change=1
+ 511   2                              {
+ 512   3                                      if(open)//Ëø´ò¿ª£¬²ÅÄÜ¸ü¸ÄÃÜÂë
+ 513   3                                      {
+ 514   4                                              while(!end)//¸ù¾Ýposition´ÎÊý  ±ØÐëÓÐÁù´ÎÑ­»·
+ 515   4                                              {
+ 516   5                                               keyscan();
+ 517   5                                               inputpw();
+ 518   5                                                      if(reset|close)//µ±S18»òÕßS19±»°´ÏÂÊ±£¬Ìø³ö   ÖØÉèºÍ¹Ø±Õ
+ 519   5                                                      {       end=1;
+ 520   6                                                              break;
+ 521   6                                                      }
+ 522   5                                                      display();
+ 523   5                                              }
+ 524   4                                      }
+ 525   3                              }
+ 526   2                              if(open){//¿ªËø×´Ì¬²ÅÄÜ½øÐÐ³õÊ¼»¯
+ 527   3                                      if(root){//S20³õÊ¼»¯ÃÜÂë
+ 528   4                                               reatartinpw();//µ÷ÓÃ³õÊ¼»¯º¯Êý
+ 529   4                                              }
+ 530   3                              }
+ 531   2                              if(ok)//°´ÏÂS17¸ü¸ÄÃÜÂëÊ±£¬µ±ËùÓÐÁùÎ»ÐÂÃÜÂë¾ù±»°´ÏÂÊ±£¬¿ÉÒÔ°´ÏÂ´Ë¼ü£¬½áÊøÃÜÂë¸ü¸Ä
+ 532   2                              {                 //ÆäËûÊ±¼ä°´ÏÂ´Ë¼üÎÞÐ§
+ 533   3                                       pwset();//µ÷ÓÃ±£´æÃÜÂëº¯Êý
+ 534   3                              }
+ 535   2                              if(reset)//µ±S18±»°´ÏÂ£¬resetÖÃÎ»
+ 536   2                              {
+ 537   3                              resetfun();//µ÷ÓÃÖØÐÂÊäÈëº¯Êý   
+ 538   3                              }
+ 539   2                              if(close)//S19¼ü°´ÏÂ£¬closeÖÃÎ»
+ 540   2                              {
+ 541   3                                      closed();//µ÷ÓÃ¹ØËøº¯Êý
+ 542   3                              }
+ 543   2                              display(); //ÊµÊ±ÏÔÊ¾
+ 544   2                      }
+ 545   1              }
+
+
+C51 COMPILER V9.00   080CXH                                                                06/18/2021 12:21:47 PAGE 10  
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1372    ----
+   CONSTANT SIZE    =     24    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     28    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      8    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
